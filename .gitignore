@@ -1,0 +1,5 @@
+# Ignore everything except .java files
+*
+!*.java
+!.gitignore
+!*/
