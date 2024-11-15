@@ -8,21 +8,19 @@ import edu.uno.ai.logic.Proposition;
 import edu.uno.ai.planning.Heuristic;
 import edu.uno.ai.planning.ss.StateSpaceNode;
 
-public class Cawatso3Heuristic implements Heuristic  {
+public class Cawatso3Heuristic implements Heuristic<StateSpaceNode> {
     private HashMap<Literal, Double> values = new HashMap<>();
 
-    public double evaluate(StateSpaceNode root) {
-        return 0.0;
-    }
-
-    public Double evaluateProposition(Proposition proposition) {
+    @Override
+    public double evaluate(StateSpaceNode node) {
+        Proposition proposition = node.state.toProposition();
         if (proposition instanceof Literal) {
-            return evaluateLiteral((Literal) proposition);
+            return evaluate((Literal) proposition);
         } else {
             double total = 0.0;
 
             for (Proposition subProposition : ((Conjunction) proposition).arguments) {
-                double subValue = evaluateProposition(subProposition);
+                double subValue = evaluate(subProposition);
                 if (subValue == Double.POSITIVE_INFINITY) {
                     return Double.POSITIVE_INFINITY;
                 }
@@ -34,15 +32,35 @@ public class Cawatso3Heuristic implements Heuristic  {
         }
     }
 
-    public Double evaluateLiteral(Literal literal) {
+    public double evaluate(Proposition proposition) {
+        if (proposition instanceof Literal) {
+            return this.evaluate((Literal) proposition);
+        } else {
+            double value = 0.0;
+
+            for (Proposition subProposition : ((Conjunction)proposition).arguments) {
+                double subPropValue = this.evaluate(subProposition);
+            
+                if ((subPropValue == Double.POSITIVE_INFINITY)) {
+                    return Double.POSITIVE_INFINITY;
+                }
+
+                value += subPropValue;
+            }
+
+            return value;
+        }
+    }
+
+    public Double evaluate(Literal literal) {
         Double value = values.getOrDefault(literal, null);
         return value == null ? Double.POSITIVE_INFINITY : value;
     }
 
-    public Boolean heuristicValue(Proposition proposition, Double value) {
+    public Boolean evaluate(Proposition proposition, Double value) {
         if (proposition instanceof Literal) {
             Literal literal = (Literal) proposition;
-            double currentValue = evaluateLiteral(literal);
+            double currentValue = evaluate(literal);
             if (value < currentValue) {
                 values.put(literal, value);
                 return true;
@@ -53,7 +71,7 @@ public class Cawatso3Heuristic implements Heuristic  {
             boolean updated = false;
 
             for (Proposition subProposition : ((Conjunction) proposition).arguments) {
-                updated = heuristicValue(subProposition, value) || updated;
+                updated = evaluate(subProposition, value) || updated;
             }
 
             return updated;

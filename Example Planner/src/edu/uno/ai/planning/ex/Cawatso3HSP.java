@@ -2,6 +2,7 @@ package edu.uno.ai.planning.ex;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import edu.uno.ai.SearchBudget;
@@ -24,69 +25,100 @@ public class Cawatso3HSP extends StateSpaceSearch {
     private Cawatso3HSP(StateSpaceProblem problem, SearchBudget budget, Heuristic heuristic) {
         super(problem, budget);
         this.heuristic = heuristic;
-        this.frontier.push(this.root, heuristic.evaluate(this.root));
+        this.frontier.push(this.root, this.heuristic.evaluate(this.root));
     }
 
     public Cawatso3HSP(StateSpaceProblem problem, SearchBudget budget) {
         this(problem, budget, new Cawatso3Heuristic());
     }
 
+    // @Override
+    // public Plan solve() {
+    //     MinPriorityQueue<StateSpaceNode> frontier = new MinPriorityQueue<>();
+    //     frontier.push(root, f(root, problem));
+
+    //     Set<State> visited = new HashSet<>();
+
+    //     while (!frontier.isEmpty() && budget.getRemainingOperations() > 0) {
+    //         StateSpaceNode current = frontier.pop();
+
+    //         if (problem.isSolution(current.plan)) {
+    //             return current.plan;
+    //         }
+
+    //         if (!visited.add(current.state)) {
+    //             continue;
+    //         }
+
+    //         for (Step step : problem.steps) {
+    //             StateSpaceNode successor = current.expand(step);
+
+    //             frontier.push(successor, f(successor, problem));
+    //         }
+    //     }
+
+    //     return null;
+    // }
+
     @Override
     public Plan solve() {
-        MinPriorityQueue<StateSpaceNode> frontier = new MinPriorityQueue<>();
-        frontier.push(root, f(root, problem));
+        // Set<State> visited = new HashSet<>();
 
-        Set<State> visited = new HashSet<>();
+        while (!frontier.isEmpty()) {
+            StateSpaceNode current = (StateSpaceNode)this.frontier.pop();
+            Iterator<Step> iterator = this.problem.steps.iterator();
 
-        while (!frontier.isEmpty() && budget.getRemainingOperations() > 0) {
-            StateSpaceNode current = frontier.pop();
+            while (iterator.hasNext()) {
+                Step step = iterator.next();
 
-            if (problem.isSolution(current.plan)) {
+                if (step.precondition.isTrue(current.state)) {
+                    StateSpaceNode newNode = current.expand(step);
+
+                    double value = this.heuristic.evaluate(newNode);
+
+                    if (value != Double.POSITIVE_INFINITY) {
+                        this.frontier.push(newNode, newNode.plan.size() + value);
+                    }
+                }
+            }
+
+            if (this.problem.goal.isTrue(current.state)) {
                 return current.plan;
             }
-
-            if (!visited.add(current.state)) {
-                continue;
-            }
-
-            for (Step step : problem.steps) {
-                StateSpaceNode successor = current.expand(step);
-
-                frontier.push(successor, f(successor, problem));
-            }
+            
         }
 
         return null;
     }
 
-    private double f(StateSpaceNode node, StateSpaceProblem problem) {
-        return g(node) + h(node, problem);
-    }
+    // private double f(StateSpaceNode node, StateSpaceProblem problem) {
+    //     return g(node) + h(node, problem);
+    // }
 
-    private double g(StateSpaceNode node) {
-        return node.plan.size();
-    }
+    // private double g(StateSpaceNode node) {
+    //     return node.plan.size();
+    // }
 
-    private double h(StateSpaceNode node, StateSpaceProblem problem) {
-        ArrayList<Literal> list = new ArrayList<>();
-        State state = node.state;
+    // private double h(StateSpaceNode node, StateSpaceProblem problem) {
+    //     ArrayList<Literal> list = new ArrayList<>();
+    //     State state = node.state;
 
-        int count = 0;
+    //     int count = 0;
 
-        if (problem.goal instanceof Literal) {
-            list.add((Literal) problem.goal);
-        } else {
-            for (Proposition conjunct : ((Conjunction) problem.goal).arguments) {
-                list.add((Literal) conjunct);
-            }
-        }
+    //     if (problem.goal instanceof Literal) {
+    //         list.add((Literal) problem.goal);
+    //     } else {
+    //         for (Proposition conjunct : ((Conjunction) problem.goal).arguments) {
+    //             list.add((Literal) conjunct);
+    //         }
+    //     }
 
-        for (Literal l : list) {
-            if (!l.isTrue(state)) {
-                count++;
-            }
-        }
+    //     for (Literal l : list) {
+    //         if (!l.isTrue(state)) {
+    //             count++;
+    //         }
+    //     }
 
-        return count;
-    }
+    //     return count;
+    // }
 }
