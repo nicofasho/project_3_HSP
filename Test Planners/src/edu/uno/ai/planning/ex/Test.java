@@ -21,11 +21,11 @@ public class Test {
 	
 	private static final Planner<?>[] PLANNERS = new Planner[] {
 		new Cawatso3(),
-		new BreadthFirstSearchPlanner(),
-		new PartialOrderPlanner(),
-		new GraphPlan(),
-		new BlackBox(),
-		new HeuristicSearchPlanner()
+		// new BreadthFirstSearchPlanner(),
+		// new PartialOrderPlanner(),
+		// new GraphPlan(),
+		// new BlackBox(),
+		new HeuristicSearchPlanner(),
 	};
 
 	private static final String[] DOMAINS = new String[] {

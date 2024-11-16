@@ -16,16 +16,11 @@ public class Cawatso3 extends StateSpacePlanner {
 
 	private Heuristic heuristic;
 
-	private Cawatso3(String name, Heuristic heuristic) {
-		super(name);
-		this.heuristic = heuristic;
+	private Cawatso3(String name) {
+		super("Cawatso3");
 	}
 
-	public Cawatso3() {
-		this("Cawatso3", new Cawatso3Heuristic());
-	}
-
-	@Override
+		@Override
 	protected StateSpaceSearch makeStateSpaceSearch(StateSpaceProblem problem, SearchBudget budget) {
 		return new Cawatso3HSP(problem, budget);
 	}
