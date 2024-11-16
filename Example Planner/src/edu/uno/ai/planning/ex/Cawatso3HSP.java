@@ -18,53 +18,70 @@ import edu.uno.ai.planning.ss.StateSpaceProblem;
 import edu.uno.ai.planning.ss.StateSpaceSearch;
 import edu.uno.ai.util.MinPriorityQueue;
 
+/**
+ * Implementation of Heuristic Search Planning algorithm.
+ */
 public class Cawatso3HSP extends StateSpaceSearch {
-    private MinPriorityQueue<StateSpaceNode> frontier = new MinPriorityQueue<>();
+    private final MinPriorityQueue<StateSpaceNode> frontier;
+    private final Map<StateSpaceNode, Double> pathCosts;
+    private final Set<StateSpaceNode> visitedNodes;
 
     public Cawatso3HSP(StateSpaceProblem problem, SearchBudget budget) {
         super(problem, budget);
+        this.frontier = new MinPriorityQueue<>();
+        this.pathCosts = new HashMap<>();
+        this.visitedNodes = new HashSet<>();
     }
 
     @Override
     public Plan solve() {
+        initializeSearch();
+        return performSearch();
+    }
+
+    private void initializeSearch() {
         frontier.push(root, 0.0);
+        pathCosts.put(root, 0.0);
+    }
 
-        HashMap<StateSpaceNode, Double> g_costs = new HashMap<>();
-
-        g_costs.put(root, 0.0);
-
-        HashSet<StateSpaceNode> visited = new HashSet<StateSpaceNode>();
-
+    private Plan performSearch() {
         while (!frontier.isEmpty()) {
-            StateSpaceNode current = frontier.pop();
+            StateSpaceNode currentNode = frontier.pop();
 
-            if (this.problem.goal.isTrue(current.state)) {
-                return current.plan;
+            if (isGoalState(currentNode)) {
+                return currentNode.plan;
             }
 
-            visited.add(current);
-
-            Iterator<Step> iterator = this.problem.steps.iterator();
-
-            while (iterator.hasNext()) {
-                Step step = iterator.next();
-
-                if (step.precondition.isTrue(current.state)) {
-                    StateSpaceNode newNode = current.expand(step);
-
-                    Double g_cost = g_costs.get(current) + 1;
-                    Double h_cost = calculateHeuristic(newNode.state);
-                    Double f_cost = g_cost + h_cost;
-
-                    if (!visited.contains(newNode) || g_cost < g_costs.get(newNode)) {
-                        g_costs.put(newNode, g_cost);
-                        frontier.push(newNode, f_cost);
-                    }
-                }
-
+            if (!visitedNodes.contains(currentNode)) {
+                visitedNodes.add(currentNode);
+                expandNode(currentNode);
             }
         }
-        return null;
+        return null; // No solution found
+    }
+
+    private boolean isGoalState(StateSpaceNode node) {
+        return problem.goal.isTrue(node.state);
+    }
+
+    private void expandNode(StateSpaceNode node) {
+        Iterator<Step> availableSteps = problem.steps.iterator();
+        while (availableSteps.hasNext()) {
+            Step step = availableSteps.next();
+
+            if (step.precondition.isTrue(node.state)) {
+                StateSpaceNode newNode = node.expand(step);
+
+                Double g_cost = pathCosts.get(node) + 1;
+                Double h_cost = calculateHeuristic(newNode.state);
+                Double f_cost = g_cost + h_cost;
+
+                if (!visitedNodes.contains(newNode) || g_cost < pathCosts.get(newNode)) {
+                    pathCosts.put(newNode, g_cost);
+                    frontier.push(newNode, f_cost);
+                }
+            }
+        }
     }
 
     private Set<Literal> extractLiterals(Proposition prop) {
